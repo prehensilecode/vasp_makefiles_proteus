@@ -1,0 +1,89 @@
+#-----------------------------------------------------------------------
+# Makefile for Portland Group F90/HPF compiler
+# the makefile was tested only under Linux on Intel platforms
+# however it might work on other platforms as well
+#
+# this release of vasp.4.lib contains lapack v2.0
+# this can be compiled with pgf90 compiler if the option -O1 is used
+#
+# Mind: one user reported that he had to copy preclib.F diolib.F
+#  dlexlib.F and drdatab.F to the directory vasp.4.4, compile the files
+#  there and link them directly  into vasp
+#  for no obvious reason these files could not be linked from the library
+#
+#-----------------------------------------------------------------------
+
+.SUFFIXES: .inc .f .F
+
+.NOTPARALLEL : clean
+.SUFFIXES : .inc .f .f90 .F
+
+### Replace suffix rules with pattern rules. --dwc62
+
+%.o : %.F
+
+%.o : %.s
+
+%.o : %.f
+	$(FC) $(FFLAGS) $(FREE) -c $<
+
+%.f : %.F
+	$(CPP) $(CPPFLAGS) $< > $@
+
+%.o : %.c
+	$(CC) $(CFLAGS) -c $<
+
+# C-preprocessor
+CPP      = icc -E
+CPPFLAGS = -P -C
+CC = icc
+FC = ifort
+
+FREE   = -free
+NOFREE = -nofree
+CFLAGS = -O3 -xHost -static -mkl
+FFLAGS = -O3 -xHost -static -mkl
+
+# .f files which are created by preprocessing
+PROCSRC =  diolib.f dlexlib.f drdatab.f
+DOBJ = preclib.o timing_.o derrf_.o dclock_.o diolib.o dlexlib.o drdatab.o
+
+
+#-----------------------------------------------------------------------
+# general rules
+#-----------------------------------------------------------------------
+
+all: libdmy.a
+
+clean:
+	-/bin/rm -f libdmy.* *.o $(PROCSRC)
+
+libdmy.a: $(DOBJ) linpack_double.o
+	ar ruv libdmy.a $^
+
+libdmy.so: $(DOBJ) linpack_double.o
+	$(FC) -shared -o $@ $^  ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a \
+		${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a \
+		-Wl,-rpath,$(MKLROOT)/lib/intel64 -L${MKLROOT}/lib/intel64 \
+		-lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential \
+		-lmkl_blacs_intelmpi_lp64 -lpthread -lm
+
+# files which do not require autodouble 
+#lapack_min.o: lapack_min.f
+#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+
+#lapack_double.o: lapack_double.f
+#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+
+#lapack_single.o: lapack_single.f
+#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+
+#lapack_atlas.o: lapack_atlas.f
+#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+
+linpack_double.o: linpack_double.f
+	$(FC) $(FFLAGS) $(NOFREE) -c $^
+
+#linpack_single.o: linpack_single.f
+#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+
