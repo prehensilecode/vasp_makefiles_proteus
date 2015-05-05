@@ -27,7 +27,9 @@ FPPFLAGS = -free -f_com=no -w0
 ### Using "avoidalloc" requires adding a new source file to set stacksize limit,
 ### and modifying main.F
 ###
-### DGEMM uses cache tiling and reuse i.e. faster than DGEMV - http://stackoverflow.com/questions/18410162/dgemm-or-dgemv-for-matrix-multiplication
+### DGEMM uses cache tiling and reuse i.e. faster than DGEMV
+### See http://stackoverflow.com/questions/18410162/dgemm-or-dgemv-for-matrix-multiplication
+### This contradicts advice from original VASP makefile 
 
 # setting -DRPROMU_DGEMV  -DRACCMU_DGEMV in the CPP lines usually speeds up program execution
 CPPFLAGS = -DHOST=\"LinuxIFC\" \
