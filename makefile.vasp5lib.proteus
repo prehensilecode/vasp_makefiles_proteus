@@ -1,52 +1,51 @@
-#-----------------------------------------------------------------------
-# Makefile for Portland Group F90/HPF compiler
-# the makefile was tested only under Linux on Intel platforms
-# however it might work on other platforms as well
-#
-# this release of vasp.4.lib contains lapack v2.0
-# this can be compiled with pgf90 compiler if the option -O1 is used
-#
-# Mind: one user reported that he had to copy preclib.F diolib.F
-#  dlexlib.F and drdatab.F to the directory vasp.4.4, compile the files
-#  there and link them directly  into vasp
-#  for no obvious reason these files could not be linked from the library
-#
-#-----------------------------------------------------------------------
-
-.SUFFIXES: .inc .f .F
+###
+### makefile.vasp5lib.proteus
+### -- 2015-05-05
+###
+### Makefile by D. Chin <dwc62@drexel.edu> for vasp.5.lib 
+### on URCF Proteus using Intel Composer XE 2015 + MKL 11.2
+###
+### proteus-specific comments start with "###"
 
 .NOTPARALLEL : clean
-.SUFFIXES : .inc .f .f90 .F
 
-### Replace suffix rules with pattern rules. --dwc62
+###
+### Replace old suffix rules with pattern rules. 
+###
 
+### cancel producing .o from .F and .s
 %.o : %.F
 
 %.o : %.s
 
 %.o : %.f
-	$(FC) $(FFLAGS) $(FREE) -c $<
+	$(FC) $(FFLAGS) -free $(OPT) -c $<
 
 %.f : %.F
-	$(CPP) $(CPPFLAGS) $< > $@
+	$(FPP) $(FPPFLAGS) $< $@
 
 %.o : %.c
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) $(OPT) -c $<
 
-# C-preprocessor
+# preprocessor
+FPP      = fpp
+FPPFLAGS = -P -C -free -f_com=no -w0
+
 CPP      = icc -E
 CPPFLAGS = -P -C
+
 CC = icc
 FC = ifort
 
-FREE   = -free
-NOFREE = -nofree
-CFLAGS = -O3 -xHost -static -mkl
-FFLAGS = -O3 -xHost -static -mkl
+OPT    = -O3 -xHost
+NOOPT  = -O0 -xHost
+CFLAGS = -openmp -mkl
+FFLAGS = -names lowercase -openmp -mkl
 
-# .f files which are created by preprocessing
-PROCSRC =  diolib.f dlexlib.f drdatab.f
-DOBJ = preclib.o timing_.o derrf_.o dclock_.o diolib.o dlexlib.o drdatab.o
+DOBJ    = preclib.o timing_.o derrf_.o dclock_.o diolib.o dlexlib.o drdatab.o
+
+### Select appropriate precision linpack (see bottom of makefile)
+LINPACKOBJ = linpack_double.o
 
 
 #-----------------------------------------------------------------------
@@ -56,34 +55,32 @@ DOBJ = preclib.o timing_.o derrf_.o dclock_.o diolib.o dlexlib.o drdatab.o
 all: libdmy.a
 
 clean:
-	-/bin/rm -f libdmy.* *.o $(PROCSRC)
+	-/bin/rm -f libdmy.* *.o
 
 libdmy.a: $(DOBJ) linpack_double.o
-	ar ruv libdmy.a $^
+	ar ruv $@ $^
 
-libdmy.so: $(DOBJ) linpack_double.o
-	$(FC) -shared -o $@ $^  ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a \
-		${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a \
-		-Wl,-rpath,$(MKLROOT)/lib/intel64 -L${MKLROOT}/lib/intel64 \
-		-lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential \
-		-lmkl_blacs_intelmpi_lp64 -lpthread -lm
-
+###
+### These next 3 are a bundled subset of LAPACK.
+### Comment out as we use MKL's LAPACK.
+###
 # files which do not require autodouble 
 #lapack_min.o: lapack_min.f
-#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+#	$(FC) $(FFLAGS) -c $^
 
 #lapack_double.o: lapack_double.f
-#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+#	$(FC) $(FFLAGS) -c $^
 
 #lapack_single.o: lapack_single.f
-#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+#	$(FC) $(FFLAGS) -c $^
 
+### We use LAPACK MKL, rather than LAPACK ATLAS
 #lapack_atlas.o: lapack_atlas.f
-#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+#	$(FC) $(FFLAGS) -c $^
 
 linpack_double.o: linpack_double.f
-	$(FC) $(FFLAGS) $(NOFREE) -c $^
+	$(FC) $(FFLAGS) $(OPT) -nofree -c $<
 
 #linpack_single.o: linpack_single.f
-#	$(FC) $(FFLAGS) $(NOFREE) -c $^
+#	$(FC) $(FFLAGS) -c $^
 

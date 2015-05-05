@@ -1,0 +1,285 @@
+### 
+### makefile.vasp53.openmp.proteus
+### -- 2015-05-05
+###
+### Makefile by D. Chin <dwc62@drexel.edu> for Proteus URCF 
+### Intel Composer XE 2015 + MKL 11.2 + OpenMP
+### 
+### NB proteus-specific comments use "###"
+
+
+### preprocessor
+FPP      = fpp
+FPPFLAGS = -free -f_com=no -w0
+
+#-----------------------------------------------------------------------
+# possible options for CPP:
+# NGXhalf             charge density   reduced in X direction
+# wNGXhalf            gamma point only reduced in X direction
+# avoidalloc          avoid ALLOCATE if possible
+# PGF90               work around some for some PGF90 / IFC bugs
+# CACHE_SIZE          1000 for PII,PIII, 5000 for Athlon, 8000-12000 P4, PD
+# RPROMU_DGEMV        use DGEMV instead of DGEMM in RPRO (depends on used BLAS)
+# RACCMU_DGEMV        use DGEMV instead of DGEMM in RACC (depends on used BLAS)
+# tbdyn                 MD package of Tomas  Bucko
+#-----------------------------------------------------------------------
+
+### Using "avoidalloc" requires adding a new source file to set stacksize limit,
+### and modifying main.F
+###
+### DGEMM uses cache tiling and reuse i.e. faster than DGEMV - http://stackoverflow.com/questions/18410162/dgemm-or-dgemv-for-matrix-multiplication
+
+# setting -DRPROMU_DGEMV  -DRACCMU_DGEMV in the CPP lines usually speeds up program execution
+CPPFLAGS = -DHOST=\"LinuxIFC\" \
+           -DCACHE_SIZE=12000 \
+           -DNGXhalf \
+           -DRPROMU_DGEMV -DRACCMU_DGEMV
+
+###
+### pattern rules to replace old suffix rules
+###
+
+### The old macro "SUFFIX=.f90" has been removed.
+
+### cancel %.o dependency of %.F since we require pre-processed .f90
+%.o : %.F
+
+
+### rule to generate a .f90 from a .F
+%.f90 : %.F
+	$(FPP) $(FPPFLAGS) $(CPPFLAGS) $< $@
+
+### %.f90 files are compiled into %.o and %.mod module files
+%.o %.mod : %.f90
+	$(FC) $(FFLAGS) $(OFLAG) $(INCS) -c $<
+	
+
+#-----------------------------------------------------------------------
+# fortran compiler and linker
+#-----------------------------------------------------------------------
+FC = ifort
+
+# fortran linker
+FCL = $(FC)
+
+
+#-----------------------------------------------------------------------
+# general fortran flags  (there must a trailing blank on this line)
+# byterecl is strictly required for ifc, since otherwise
+# the WAVECAR file becomes huge
+#-----------------------------------------------------------------------
+
+### Check the Intel Link Line Advisor for MKL-specific includes
+FFLAGS = -free -names lowercase -assume byterecl \
+         -openmp \
+         -I$(MKLROOT)/include/intel64/lp64 -I$(MKLROOT)/include 
+
+
+#-----------------------------------------------------------------------
+# optimization
+# we have tested whether higher optimisation improves performance
+# -axK  SSE1 optimization,  but also generate code executable on all mach.
+#       xK improves performance somewhat on XP, and a is required in order
+#       to run the code on older Athlons as well
+# -xW   SSE2 optimization
+# -axW  SSE2 optimization,  but also generate code executable on all mach.
+# -tpp6 P3 optimization
+# -tpp7 P4 optimization
+#-----------------------------------------------------------------------
+
+### -xHost may be replaced with the appropriate -xFEATURE flag if your 
+### compilation host differs from your execute host
+OFLAG=-O3 -xHost -mkl
+
+OFLAG_HIGH = $(OFLAG)
+DEBUG  = -free -O0
+INLINE = $(OFLAG)
+
+#-----------------------------------------------------------------------
+# the following lines specify the position of BLAS  and LAPACK
+# we recommend to use mkl, that is simple and most likely 
+# fastest in Intel based machines
+#-----------------------------------------------------------------------
+
+MKL_PATH      = $(MKLROOT)/lib/intel64
+MKL_FFTW_PATH = $(MKLROOT)/lib/intel64
+
+#-----------------------------------------------------------------------
+
+# options for linking, nothing is required (usually)
+LINK =
+
+#-----------------------------------------------------------------------
+# fft libraries:
+# VASP.5.2 can use fftw.3.1.X (http://www.fftw.org)
+# since this version is faster on P4 machines, we recommend to use it
+#-----------------------------------------------------------------------
+
+# you may also try to use the fftw wrapper to mkl (but the path might vary a lot)
+# it seems this is best for AMD based systems
+
+### FFTW3 interface from MKL. libfftw3xf_intel.a must be compiled
+### by the end user from Intel-provided source. See the MKL Reference
+### Manual for instructions.
+FFT3D   = fftw3d.o fft3dlib.o $(MKL_FFTW_PATH)/libfftw3xf_intel.a
+INCS    = -I$(MKLROOT)/include/fftw 
+
+### Check the Intel Link Line Advisor for details
+### Combine all linalg stuff into the BLAS macro
+### MKL static
+BLAS = $(MKLROOT)/lib/intel64/libmkl_blas95_lp64.a \
+       $(MKLROOT)/lib/intel64/libmkl_lapack95_lp64.a \
+       -Wl,--start-group \
+       $(MKLROOT)/lib/intel64/libmkl_intel_lp64.a \
+       $(MKLROOT)/lib/intel64/libmkl_core.a \
+       $(MKLROOT)/lib/intel64/libmkl_intel_thread.a \
+       -Wl,--end-group \
+       -lpthread -lm
+    
+
+#-----------------------------------------------------------------------
+# libraries
+#-----------------------------------------------------------------------
+
+### libdmy.a makefile was fixed to include linpack_double.o properly
+LIB   = -L../vasp.5.lib -ldmy  \
+      $(LAPACK) $(BLAS)
+
+#-----------------------------------------------------------------------
+# general rules and compile lines
+#-----------------------------------------------------------------------
+BASIC=   symmetry.o symlib.o   lattlib.o  random.o   
+
+
+### the order of .o files here matters
+SOURCE=  base.o     mpi.o      smart_allocate.o      xml.o  \
+         constant.o jacobi.o   main_mpi.o  scala.o   \
+         asa.o      lattice.o  poscar.o   ini.o  mgrid.o  xclib.o  vdw_nl.o  xclib_grad.o \
+         radial.o   pseudo.o   gridq.o     ebs.o  \
+         mkpoints.o wave.o     wave_mpi.o  wave_high.o  spinsym.o \
+         $(BASIC)   nonl.o     nonlr.o    nonl_high.o dfast.o    choleski2.o \
+         mix.o      hamil.o    xcgrad.o   xcspin.o    potex1.o   potex2.o  \
+         constrmag.o cl_shift.o relativistic.o LDApU.o \
+         paw_base.o metagga.o  egrad.o    pawsym.o   pawfock.o  pawlhf.o   rhfatm.o  hyperfine.o paw.o   \
+         mkpoints_full.o       charge.o   Lebedev-Laikov.o  stockholder.o dipol.o    pot.o \
+         dos.o      elf.o      tet.o      tetweight.o hamil_rot.o \
+         chain.o    dyna.o     k-proj.o    sphpro.o    us.o  core_rel.o \
+         aedens.o   wavpre.o   wavpre_noio.o broyden.o \
+         dynbr.o    hamil_high.o  rmm-diis.o reader.o   writer.o   tutor.o xml_writer.o \
+         brent.o    stufak.o   fileio.o   opergrid.o stepver.o  \
+         chgloc.o   fast_aug.o fock_multipole.o  fock.o  mkpoints_change.o sym_grad.o \
+         mymath.o   internals.o npt_dynamics.o   dynconstr.o dimer_heyden.o dvvtrajectory.o subdftd3.o \
+         vdwforcefield.o nmr.o      pead.o     subrot.o   subrot_scf.o  paircorrection.o \
+         force.o    pwlhf.o    gw_model.o optreal.o  steep.o    davidson.o  david_inner.o \
+         electron.o rot.o  electron_all.o shm.o    pardens.o  \
+         optics.o   constr_cell_relax.o   stm.o    finite_diff.o elpol.o    \
+         hamil_lr.o rmm-diis_lr.o  subrot_cluster.o subrot_lr.o \
+         lr_helper.o hamil_lrf.o   elinear_response.o ilinear_response.o \
+         linear_optics.o \
+         setlocalpp.o  wannier.o electron_OEP.o electron_lhf.o twoelectron4o.o \
+         gauss_quad.o m_unirnk.o minimax_tabs.o minimax.o \
+         mlwf.o     ratpol.o screened_2e.o wave_cacher.o chi_base.o wpot.o \
+         local_field.o ump2.o ump2kpar.o fcidump.o ump2no.o \
+         bse_te.o bse.o acfdt.o chi.o sydmat.o \
+         lcao_bare.o wnpr.o dmft.o \
+         rmm-diis_mlr.o  linear_response_NMR.o wannier_interpol.o linear_response.o  auger.o getshmem.o \
+         dmatrix.o
+
+### the order of dependencies here matters
+### and the order of linking also matters - must be the same order as the dependencies
+vasp: $(SOURCE) $(FFT3D) main.o
+	$(FCL) $(FFLAGS) -o $@ $^ $(LIB) $(LINK)
+
+makeparam: $(SOURCE) $(FFT3D) makeparam.o main.F
+	$(FCL) -o $@  $(LINK) makeparam.o $(SOURCE) $(FFT3D) $(LIB)
+
+zgemmtest: zgemmtest.o base.o random.o
+	$(FCL) -o $@ $(LINK) zgemmtest.o random.o base.o $(LIB)
+
+dgemmtest: dgemmtest.o base.o random.o
+	$(FCL) -o $@ $(LINK) dgemmtest.o random.o base.o $(LIB) 
+
+ffttest: base.o smart_allocate.o mpi.o mgrid.o random.o ffttest.o $(FFT3D)
+	$(FCL) -o $@ $(LINK) ffttest.o mpi.o mgrid.o random.o smart_allocate.o base.o $(FFT3D) $(LIB)
+
+kpoints: $(SOURCE) $(FFT3D) makekpoints.o main.F
+	$(FCL) -o $@ $(LINK) makekpoints.o $(SOURCE) $(FFT3D) $(LIB)
+
+clean:	
+	-rm -f *.g *.f *.o *.L *.mod
+
+#main.o: main.f90
+#	$(FC) $(FFLAGS) $(OFLAG) $(INCS) -c $<
+
+xcgrad.o: xcgrad.f90
+	$(FC) $(FFLAGS) $(INLINE) $(INCS) -c $<
+
+xcspin.o: xcspin.f90
+	$(FC) $(FFLAGS) $(INLINE) $(INCS) -c $<
+
+makeparam.o: makeparam.f90
+	$(FC) $(FFLAGS) $(DEBUG)  $(INCS) -c $<
+
+makeparam.f90: makeparam.F main.F 
+
+#
+# MIND: I do not have a full dependency list for the include
+# and MODULES: here are only the minimal basic dependencies
+# if one strucuture is changed then touch_dep must be called
+# with the corresponding name of the structure
+#
+base.o: base.inc base.F
+mgrid.o: mgrid.inc mgrid.F
+constant.o: constant.inc constant.F
+lattice.o: lattice.inc lattice.F
+setex.o: setexm.inc setex.F
+pseudo.o: pseudo.inc pseudo.F
+mkpoints.o: mkpoints.inc mkpoints.F
+wave.o: wave.F
+nonl.o: nonl.inc nonl.F
+nonlr.o: nonlr.inc nonlr.F
+
+
+# special rules
+#-----------------------------------------------------------------------
+# these special rules have been tested for ifc.11 and ifc.12 only
+
+fft3dlib.o : fft3dlib.f90
+	$(FC) $(FFLAGS) -O2 -c $<
+
+fft3dfurth.o : fft3dfurth.f90
+	$(FC) $(FFLAGS) -O1 -c $<
+
+fftw3d.o : fftw3d.f90
+	$(FC) $(FFLAGS) -O1 $(INCS) -c $<
+
+fftmpi.o : fftmpi.f90
+	$(FC) $(FFLAGS) -O1 -c $<
+
+fftmpiw.o : fftmpiw.f90
+	$(FC) $(FFLAGS) -O1 $(INCS) -c $<
+
+wave_high.o : wave_high.f90
+	$(FC) $(FFLAGS) -O1 -c $<
+
+# the following rules are probably no longer required (-O3 seems to work)
+#wave.o : wave.F
+#	$(CPP)
+#	$(FC) $(FFLAGS) -O2 -c $*$(SUFFIX)
+
+#paw.o : paw.F
+#	$(CPP)
+#	$(FC) $(FFLAGS) -O1 -c $*$(SUFFIX)
+
+#cl_shift.o : cl_shift.F
+#	$(CPP)
+#	$(FC) $(FFLAGS) -O2 -c $*$(SUFFIX)
+
+#us.o : us.F
+#	$(CPP)
+#	$(FC) $(FFLAGS) -O1 -c $*$(SUFFIX)
+
+#LDApU.o : LDApU.F
+#	$(CPP)
+#	$(FC) $(FFLAGS) -O2 -c $*$(SUFFIX)
+
