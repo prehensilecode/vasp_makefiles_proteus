@@ -1,5 +1,5 @@
 ### 
-### makefile.vasp53.mpiseq.proteus
+### makefile.vasp53.openmp.proteus
 ### -- 2015-05-05
 ###
 ### Makefile by D. Chin <dwc62@drexel.edu> for Proteus URCF 
@@ -27,9 +27,10 @@ FPPFLAGS = -free -f_com=no -w0
 ### Using "avoidalloc" requires adding a new source file to set stacksize limit,
 ### and modifying main.F
 ###
-### DGEMM uses cache tiling and reuse i.e. faster than DGEMV
-### See http://stackoverflow.com/questions/18410162/dgemm-or-dgemv-for-matrix-multiplication
-### This contradicts advice from original VASP makefile 
+### DGEMM uses cache tiling and reuse i.e. faster than DGEMV 
+### http://stackoverflow.com/questions/18410162/dgemm-or-dgemv-for-matrix-multiplication
+### This contradicts the note from the original makefile
+### A single test seems to indicate that DGEMV is faster, too.
 
 # setting -DRPROMU_DGEMV  -DRACCMU_DGEMV in the CPP lines usually speeds up program execution
 CPPFLAGS = -DHOST=\"LinuxIFC\" \
