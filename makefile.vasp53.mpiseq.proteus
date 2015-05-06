@@ -103,9 +103,6 @@ INLINE = $(OFLAG)
 # fastest in Intel based machines
 #-----------------------------------------------------------------------
 
-MKL_PATH      = $(MKLROOT)/lib/intel64
-MKL_FFTW_PATH = $(MKLROOT)/lib/intel64
-
 #-----------------------------------------------------------------------
 
 # options for linking, nothing is required (usually)
@@ -123,7 +120,7 @@ LINK =
 ### FFTW3 interface from MKL. libfftw3xf_intel.a must be compiled
 ### by the end user from Intel-provided source. See the MKL Reference
 ### Manual for instructions.
-FFT3D   = fftw3d.o fft3dlib.o $(MKL_FFTW_PATH)/libfftw3xf_intel.a
+FFT3D   = fftw3d.o fft3dlib.o $(MKLROOT)/lib/intel64/libfftw3xf_intel.a
 INCS    = -I$(MKLROOT)/include/fftw 
 
 ### Check the Intel Link Line Advisor for details
