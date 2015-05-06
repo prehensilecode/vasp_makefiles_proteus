@@ -39,8 +39,8 @@ FC = ifort
 
 OPT    = -O3 -xHost
 NOOPT  = -O0 -xHost
-CFLAGS = -openmp -mkl
-FFLAGS = -names lowercase -openmp -mkl
+CFLAGS = -mkl
+FFLAGS = -names lowercase -mkl
 
 DOBJ    = preclib.o timing_.o derrf_.o dclock_.o diolib.o dlexlib.o drdatab.o
 
