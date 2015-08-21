@@ -1,9 +1,9 @@
 ### 
-### makefile.vasp53.openmp.proteus
+### makefile.vasp53.mpiseq.proteus
 ### -- 2015-05-05
 ###
 ### Makefile by D. Chin <dwc62@drexel.edu> for Proteus URCF 
-### Intel Composer XE 2015 + MKL 11.2 + OpenMP
+### Intel Composer XE 2015 + MKL 11.2 + MPI (excl. OpenMP)
 ### 
 ### NB proteus-specific comments use "###"
 
