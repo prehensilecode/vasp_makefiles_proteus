@@ -5,4 +5,4 @@ NOTE: No warranty express or implied is given. This worked in one particular env
       
 With the above caveat in mind:
 * these are compilation files for VASP 5.3 to be compiled with Intel Composer XE 2015 + MKL 11.2
-* only "MPI sequential" is used - I was not able to get hybrid MPI + OpenMP to work
+* I was not able to get hybrid MPI + OpenMP to work. So, it's MPI-only, or OpenMP-only.
