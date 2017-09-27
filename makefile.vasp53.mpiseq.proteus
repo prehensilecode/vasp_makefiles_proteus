@@ -152,6 +152,7 @@ BASIC=   symmetry.o symlib.o   lattlib.o  random.o
 
 
 ### the order of .o files here matters
+### XXX stacksize.o added below
 SOURCE=  base.o     mpi.o      smart_allocate.o      xml.o  \
          constant.o jacobi.o   main_mpi.o  scala.o   \
          asa.o      lattice.o  poscar.o   ini.o  mgrid.o  xclib.o  vdw_nl.o  xclib_grad.o \
@@ -183,7 +184,9 @@ SOURCE=  base.o     mpi.o      smart_allocate.o      xml.o  \
          bse_te.o bse.o acfdt.o chi.o sydmat.o \
          lcao_bare.o wnpr.o dmft.o \
          rmm-diis_mlr.o  linear_response_NMR.o wannier_interpol.o linear_response.o  auger.o getshmem.o \
-         dmatrix.o
+         dmatrix.o \
+	 stacksize.o
+	 
 
 ### the order of dependencies here matters
 ### and the order of linking also matters - must be the same order as the dependencies
