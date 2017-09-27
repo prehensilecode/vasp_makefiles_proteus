@@ -1,6 +1,7 @@
 ### 
 ### makefile.vasp53.mpiseq.proteus
 ### -- 2015-05-05
+### UPDATE 2017-09-27 - add "stacksize.o" to SOURCE
 ###
 ### Makefile by D. Chin <dwc62@drexel.edu> for Proteus URCF 
 ### Intel Composer XE 2015 + MKL 11.2 + MPI (excl. OpenMP)
