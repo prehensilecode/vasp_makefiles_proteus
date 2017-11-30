@@ -26,6 +26,8 @@
 
 %.o : %.c
 	$(CC) $(CFLAGS) $(OPT) -c $<
+	
+%.o : %.mod
 
 # preprocessor
 FPP      = fpp
