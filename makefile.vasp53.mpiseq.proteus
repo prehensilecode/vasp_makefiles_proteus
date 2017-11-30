@@ -127,15 +127,25 @@ INCS    = -I$(MKLROOT)/include/fftw
 ### Check the Intel Link Line Advisor for details
 ### Combine all linalg stuff into the BLAS macro
 ### MKL sequential dynamic
+#BLAS = $(MKLROOT)/lib/intel64/libmkl_blas95_lp64.a \
+#       $(MKLROOT)/lib/intel64/libmkl_lapack95_lp64.a \
+#       -Wl,-rpath,$(MKLROOT)/lib/intel64 -L$(MKLROOT)/lib/intel64 \
+#       -lmkl_scalapack_lp64 \
+#       -lmkl_intel_lp64 \
+#       -lmkl_core \
+#       -lmkl_sequential \
+#       -lmkl_blacs_intelmpi_lp64 \
+#       -lpthread -lm
+       
+       
+### MKL sequential static -- XXX there may be issues with dynamic linking
 BLAS = $(MKLROOT)/lib/intel64/libmkl_blas95_lp64.a \
        $(MKLROOT)/lib/intel64/libmkl_lapack95_lp64.a \
-       -Wl,-rpath,$(MKLROOT)/lib/intel64 -L$(MKLROOT)/lib/intel64 \
-       -lmkl_scalapack_lp64 \
-       -lmkl_intel_lp64 \
-       -lmkl_core \
-       -lmkl_sequential \
-       -lmkl_blacs_intelmpi_lp64 \
-       -lpthread -lm
+       -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
+       ${MKLROOT}/lib/intel64/libmkl_sequential.a \
+       ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group \
+       -lpthread -lm -ldl
+
     
 
 #-----------------------------------------------------------------------
