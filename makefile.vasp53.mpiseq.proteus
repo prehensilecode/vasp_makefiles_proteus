@@ -1,6 +1,7 @@
 ### 
 ### makefile.vasp53.mpiseq.proteus
 ### -- 2015-05-05
+### UPDATE 2017-09-27 - add "stacksize.o" to SOURCE
 ###
 ### Makefile by D. Chin <dwc62@drexel.edu> for Proteus URCF 
 ### Intel Composer XE 2015 + MKL 11.2 + MPI (excl. OpenMP)
@@ -126,15 +127,25 @@ INCS    = -I$(MKLROOT)/include/fftw
 ### Check the Intel Link Line Advisor for details
 ### Combine all linalg stuff into the BLAS macro
 ### MKL sequential dynamic
+#BLAS = $(MKLROOT)/lib/intel64/libmkl_blas95_lp64.a \
+#       $(MKLROOT)/lib/intel64/libmkl_lapack95_lp64.a \
+#       -Wl,-rpath,$(MKLROOT)/lib/intel64 -L$(MKLROOT)/lib/intel64 \
+#       -lmkl_scalapack_lp64 \
+#       -lmkl_intel_lp64 \
+#       -lmkl_core \
+#       -lmkl_sequential \
+#       -lmkl_blacs_intelmpi_lp64 \
+#       -lpthread -lm
+       
+       
+### MKL sequential static -- XXX there may be issues with dynamic linking
 BLAS = $(MKLROOT)/lib/intel64/libmkl_blas95_lp64.a \
        $(MKLROOT)/lib/intel64/libmkl_lapack95_lp64.a \
-       -Wl,-rpath,$(MKLROOT)/lib/intel64 -L$(MKLROOT)/lib/intel64 \
-       -lmkl_scalapack_lp64 \
-       -lmkl_intel_lp64 \
-       -lmkl_core \
-       -lmkl_sequential \
-       -lmkl_blacs_intelmpi_lp64 \
-       -lpthread -lm
+       -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
+       ${MKLROOT}/lib/intel64/libmkl_sequential.a \
+       ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group \
+       -lpthread -lm -ldl
+
     
 
 #-----------------------------------------------------------------------
@@ -152,6 +163,7 @@ BASIC=   symmetry.o symlib.o   lattlib.o  random.o
 
 
 ### the order of .o files here matters
+### XXX stacksize.o added below
 SOURCE=  base.o     mpi.o      smart_allocate.o      xml.o  \
          constant.o jacobi.o   main_mpi.o  scala.o   \
          asa.o      lattice.o  poscar.o   ini.o  mgrid.o  xclib.o  vdw_nl.o  xclib_grad.o \
@@ -183,7 +195,9 @@ SOURCE=  base.o     mpi.o      smart_allocate.o      xml.o  \
          bse_te.o bse.o acfdt.o chi.o sydmat.o \
          lcao_bare.o wnpr.o dmft.o \
          rmm-diis_mlr.o  linear_response_NMR.o wannier_interpol.o linear_response.o  auger.o getshmem.o \
-         dmatrix.o
+         dmatrix.o \
+	 stacksize.o
+	 
 
 ### the order of dependencies here matters
 ### and the order of linking also matters - must be the same order as the dependencies
