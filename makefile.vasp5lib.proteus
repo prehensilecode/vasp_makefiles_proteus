@@ -26,7 +26,8 @@
 
 %.o : %.c
 	$(CC) $(CFLAGS) $(OPT) -c $<
-	
+
+### mask default rule of handling .mod with m2c
 %.o : %.mod
 
 # preprocessor
@@ -39,7 +40,7 @@ CPPFLAGS = -P -C
 CC = icc
 FC = ifort
 
-OPT    = -O3 -xHost
+OPT    = -O3 -xHost -ip
 NOOPT  = -O0 -xHost
 CFLAGS = -mkl
 FFLAGS = -names lowercase -mkl
