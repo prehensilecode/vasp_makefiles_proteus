@@ -1,4 +1,8 @@
 # vasp_makefiles
+UPDATE 2017-12-02 
+* makefile.vasp53.mpiseq.proteus does not produce a correct executable
+* Use makefile.linux\_ifc\_proteus instead -- it is based on makefile.linux\_ifc\_P4 from the VASP distribution
+
 Re-worked makefiles for VASP 5.3. Modernized some stuff to GNU Make to avoid existing kludges.
 
 NOTE: No warranty express or implied is given. This worked in one particular environment, it may not work in another.
