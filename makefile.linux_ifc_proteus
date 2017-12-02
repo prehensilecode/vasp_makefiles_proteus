@@ -1,4 +1,8 @@
 .SUFFIXES: .inc .f .f90 .F
+
+### Makefile for VASP 5.3 on Drexel URCF Proteus
+### Modified from makefile.linux_ifc_p4 
+### -- 2017-Dec-02 
 #-----------------------------------------------------------------------
 # Makefile for Intel Fortran compiler for Pentium/Athlon/Opteron 
 # based systems
@@ -64,6 +68,11 @@ FC=mpifort  -DMPI -DMPI_BLOCK=8000
 # fortran linker
 FCL=$(FC)
 
+CC = icc
+CFLAGS = -O3 -xHost -ip
+
+%.o : %.c
+	$(CC) $(CFLAGS) $(INCS) -c $<
 
 #-----------------------------------------------------------------------
 # whereis CPP ?? (I need CPP, can't use gcc with proper options)
@@ -97,7 +106,7 @@ CPP_=fpp -f_com=no -free -w0 $*.F $*$(SUFFIX)
 #-----------------------------------------------------------------------
 
 CPP     = $(CPP_)  -DHOST=\"LinuxIFC\" \
-          -DCACHE_SIZE=12000 -DPGF90 -Davoidalloc -DNGXhalf \
+          -DCACHE_SIZE=12000 -DPGF90 -Davoidalloc \
 #          -DRPROMU_DGEMV  -DRACCMU_DGEMV
 
 #-----------------------------------------------------------------------
@@ -121,7 +130,7 @@ FFLAGS =  -FR -names lowercase -assume byterecl
 #-----------------------------------------------------------------------
 
 # ifc.9.1, ifc.10.1 recommended
-OFLAG=-O3 -xHost -ipo  
+OFLAG=-O3 -xHost -ip  
 
 OFLAG_HIGH = $(OFLAG)
 OBJ_HIGH = 
@@ -153,10 +162,10 @@ BLAS = $(MKLROOT)/lib/intel64/libmkl_blas95_lp64.a \
        -Wl,-rpath,$(MKLROOT)/lib/intel64 -L$(MKLROOT)/lib/intel64 \
        -lmkl_scalapack_lp64 \
        -lmkl_intel_lp64 \
-       -lmkl_core \
        -lmkl_sequential \
+       -lmkl_core \
        -lmkl_blacs_openmpi_lp64 \
-       -lpthread -lm
+       -lpthread -lm -ldl
 
 
 # LAPACK, use vasp.5.lib/lapack_double
@@ -176,6 +185,7 @@ BLAS = $(MKLROOT)/lib/intel64/libmkl_blas95_lp64.a \
 
 #-----------------------------------------------------------------------
 
+### linpack_double is already linked in libdmy.a
 #LIB  = -L../vasp.5.lib -ldmy \
      ../vasp.5.lib/linpack_double.o $(LAPACK) \
      $(BLAS)
@@ -233,7 +243,7 @@ FCL=$(FC)
 #-----------------------------------------------------------------------
 
 CPP    = $(CPP_) -DMPI  -DHOST=\"LinuxIFC\" -DIFC \
-     -DCACHE_SIZE=4000 -DPGF90 -Davoidalloc -DNGZhalf \
+     -DCACHE_SIZE=4000 -DPGF90 -Davoidalloc \
      -DMPI_BLOCK=8000 -Duse_collective -DscaLAPACK
 ##    -DRPROMU_DGEMV  -DRACCMU_DGEMV
 
@@ -243,7 +253,7 @@ CPP    = $(CPP_) -DMPI  -DHOST=\"LinuxIFC\" -DIFC \
 #-----------------------------------------------------------------------
 
 # usually simplest link in mkl scaLAPACK
-BLACS= -L$(MKL_PATH) $-lmkl_blacs_openmpi_lp64
+BLACS= -L$(MKL_PATH) -lmkl_blacs_openmpi_lp64
 SCA= $(MKL_PATH)/libmkl_scalapack_lp64.a $(BLACS)
 
 #-----------------------------------------------------------------------
@@ -382,35 +392,35 @@ $(SUFFIX).o:
 
 fft3dlib.o : fft3dlib.F
 	$(CPP)
-	$(FC) -FR -lowercase -O2 -c $*$(SUFFIX)
+	$(FC) -FR -O2 -c $*$(SUFFIX)
 fft3dfurth.o : fft3dfurth.F
 	$(CPP)
-	$(FC) -FR -lowercase -O1 -c $*$(SUFFIX)
+	$(FC) -FR -O1 -c $*$(SUFFIX)
 fftw3d.o : fftw3d.F
 	$(CPP)
-	$(FC) -FR -lowercase -O1 $(INCS) -c $*$(SUFFIX)
+	$(FC) -FR -O1 $(INCS) -c $*$(SUFFIX)
 fftmpi.o : fftmpi.F
 	$(CPP)
-	$(FC) -FR -lowercase -O1 -c $*$(SUFFIX)
+	$(FC) -FR -O1 -c $*$(SUFFIX)
 fftmpiw.o : fftmpiw.F
 	$(CPP)
-	$(FC) -FR -lowercase -O1 $(INCS) -c $*$(SUFFIX)
+	$(FC) -FR -O1 $(INCS) -c $*$(SUFFIX)
 wave_high.o : wave_high.F
 	$(CPP)
-	$(FC) -FR -lowercase -O1 -c $*$(SUFFIX)
+	$(FC) -FR -O1 -c $*$(SUFFIX)
 # the following rules are probably no longer required (-O3 seems to work)
-wave.o : wave.F
-	$(CPP)
-	$(FC) -FR -lowercase -O2 -c $*$(SUFFIX)
-paw.o : paw.F
-	$(CPP)
-	$(FC) -FR -lowercase -O1 -c $*$(SUFFIX)
-cl_shift.o : cl_shift.F
-	$(CPP)
-	$(FC) -FR -lowercase -O2 -c $*$(SUFFIX)
-us.o : us.F
-	$(CPP)
-	$(FC) -FR -lowercase -O1 -c $*$(SUFFIX)
-LDApU.o : LDApU.F
-	$(CPP)
-	$(FC) -FR -lowercase -O2 -c $*$(SUFFIX)
+#wave.o : wave.F
+#	$(CPP)
+#	$(FC) -FR -lowercase -O2 -c $*$(SUFFIX)
+#paw.o : paw.F
+#	$(CPP)
+#	$(FC) -FR -lowercase -O1 -c $*$(SUFFIX)
+#cl_shift.o : cl_shift.F
+#	$(CPP)
+#	$(FC) -FR -lowercase -O2 -c $*$(SUFFIX)
+#us.o : us.F
+#	$(CPP)
+#	$(FC) -FR -lowercase -O1 -c $*$(SUFFIX)
+#LDApU.o : LDApU.F
+#	$(CPP)
+#	$(FC) -FR -lowercase -O2 -c $*$(SUFFIX)
